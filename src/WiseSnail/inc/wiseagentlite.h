@@ -20,13 +20,23 @@
 #define SERVER_ADDRESS            "dev-wisepaas.eastasia.cloudapp.azure.com"
 //#define SERVER_ADDRESS              "192.168.100.200"
 
+#define INTERFACE_ID_MAX_LEN	37
+#define INTERFACE_MAC_MAX_LEN	37
+#define INTERFACE_NAME_MAX_LEN	65
+#define DEVICE_ID_MAX_LEN		37
+#define GATEWAY_ID_MAX_LEN	    37
+
 // TOPIC
-#define WA_PUB_CONNECT_TOPIC "/cagent/admin/%s/agentinfoack" /**/
-#define WA_PUB_ACTION_TOPIC  "/cagent/admin/%s/agentactionreq"
-#define WA_PUB_DEVINFO_TOPIC "/cagent/admin/%s/deviceinfo"
+#define WA_PUB_CONNECT_TOPIC    "/wisepass/general/device/%s/agentinfoack"
+#define WA_PUB_ACTION_TOPIC     "/wisepass/general/device/%s/agentactionreq"
+//define WA_PUB_DEVINFO_TOPIC "/cagent/admin/%s/deviceinfo"
+#define DEF_AGENTREPORT_TOPIC	"/wisepaas/general/device/%s/devinfoack"
 
 // Subscribe
-#define WA_SUB_CBK_TOPIC "/cagent/admin/%s/agentcallbackreq"
+//PAAS1
+//#define WA_SUB_CBK_TOPIC "/cagent/admin/%s/agentcallbackreq"
+//PAAS2
+#define WA_SUB_CBK_TOPIC "/wisepaas/general/device/%s/agentactionreq"
 
 
 #include "WiseSnail.h"

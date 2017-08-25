@@ -18,7 +18,11 @@
 
 
 ///cagent/admin/00170d00006063c2/agentactionreq
-static const char *SEN_GET_RESPONSE = "{\"susiCommData\":{\"commCmd\":%d,\"handlerName\":\"%s\",\"sessionID\":\"%s\",\"sensorInfoList\":{\"e\":[%s]}}}";
+//PAAS1
+//static const char *SEN_GET_RESPONSE = "{\"susiCommData\":{\"commCmd\":%d,\"handlerName\":\"%s\",\"sessionID\":\"%s\",\"sensorInfoList\":{\"e\":[%s]}}}";
+//PAAS2
+static const char *SEN_GET_RESPONSE = "{\"content\":{\"sensorInfoList\":{\"e\":[%s]}},\"commCmd\":%d,\"agentID\":\"%s\",\"handlerName\":\"%s\",\"sendTS\":{\"$date\":%lld}}";
+
 //@@@ commandId[n], handlerName[s], sessionId[s], senData[ss]
 
 static const char *SEN_GET_DATA_V_JSON = "{\"n\":\"%s%s\",\"v\":%d,\"StatusCode\":%d}";
@@ -27,7 +31,10 @@ static const char *SEN_GET_DATA_SV_JSON = "{\"n\":\"%s%s\",\"sv\":\"%s\",\"Statu
 static const char *SEN_GET_DATA_BV_JSON = "{\"n\":\"%s%s\",\"bv\":%s,\"StatusCode\":%d}";
 
 ///cagent/admin/00170d00006063c2/agentactionreq
-static const char *SEN_SET_RESPONSE = "{\"susiCommData\":{\"commCmd\":%d,\"handlerName\":\"%s\",\"sessionID\":\"%s\",\"sensorInfoList\":{\"e\":[%s]}}}";
+//PAAS1
+//static const char *SEN_SET_RESPONSE = "{\"susiCommData\":{\"commCmd\":%d,\"handlerName\":\"%s\",\"sessionID\":\"%s\",\"sensorInfoList\":{\"e\":[%s]}}}";
+//PAAS2
+static const char *SEN_SET_RESPONSE = "{\"content\":{\"sensorInfoList\":{\"e\":[%s]}},\"commCmd\":%d,\"agentID\":\"%s\",\"handlerName\":\"%s\",\"sendTS\":{\"$date\":%lld}}";
 //@@@ commandId[n], handlerName[s], sessionId[s], senData[ss]
 
 ///cagent/admin/00000d00006063c2/agentactionreq
@@ -59,12 +66,12 @@ void SetHeartBeatRate(WiseAgentData *data) {
 
 
 /* cmd array */
-#define AGENT_CMD_LEN 256
-#define AGENT_SESSIOIN_ID_LEN 33
-#define AGENT_CLIENT_ID_LEN 17
-#define AGENT_HANDLE_NAME_LEN 32
-#define AGENT_ITEM_NAME_LEN 32
-#define AGENT_ITEM_VALUE_LEN 32
+#define AGENT_CMD_LEN            256
+#define AGENT_SESSIOIN_ID_LEN    33
+#define AGENT_CLIENT_ID_LEN      37
+#define AGENT_HANDLE_NAME_LEN    32
+#define AGENT_ITEM_NAME_LEN      32
+#define AGENT_ITEM_VALUE_LEN     32
 
 typedef struct wiseagent_cmddata {
     union {
@@ -93,6 +100,8 @@ WiseAgent_CMD gCmds[MAX_CMDS];
 WiseAgentInfoSpec gGwItem = {
 	.type = WISE_STRING, .name = "/GW/Name", .string = gGWName, .setValue = SetGWName
 };
+
+static char gGwId[GATEWAY_ID_MAX_LEN] = {0};
 
 typedef struct wiseagent_device {
 	int connection;
@@ -145,7 +154,6 @@ void WiseAccess_RepublishSensorConnectMessage();
 void WiseAgent_Response(int cmdId, char *handler, int deviceId, int itemId, char *name, char *sessionId, int statusCode, WiseAgent_CmdData* cmddata) {
 	char *mac;
 	char *response = NULL;
-    char gatewayId[32];
     char *topic = (char *)WiseMem_Alloc(128);
 	char *message = (char *)WiseMem_Alloc(8192);
     char *jsonvalue = (char *)WiseMem_Alloc(1024);
@@ -157,13 +165,14 @@ void WiseAgent_Response(int cmdId, char *handler, int deviceId, int itemId, char
 		mac = gDevices[deviceId].cliendId;
 	}
 	
-	sprintf(gatewayId, "0000%s", &mac[4]);
 	if(strlen(handler) == 5 && strncmp(handler,"IoTGW",5) == 0) {
-		sprintf(topic, WA_PUB_ACTION_TOPIC, gatewayId);
+		//sprintf(topic, WA_PUB_ACTION_TOPIC, gatewayId);
+		sprintf(topic, WA_PUB_ACTION_TOPIC, gGwId);
 	} else if(strlen(handler) == 6 && strncmp(handler,"SenHub",6) == 0) {
 		sprintf(topic, WA_PUB_ACTION_TOPIC, mac);
 	} else if(strncmp("0007",mac,4) == 0) {
-		sprintf(topic, WA_PUB_ACTION_TOPIC, gatewayId);
+		//sprintf(topic, WA_PUB_ACTION_TOPIC, gatewayId);
+		sprintf(topic, WA_PUB_ACTION_TOPIC, gGwId);
 	} else {
 		sprintf(topic, WA_PUB_ACTION_TOPIC, mac);
 	}
@@ -228,6 +237,9 @@ void WiseAgent_Response(int cmdId, char *handler, int deviceId, int itemId, char
             } else {
 				switch(statusCode) {
 					default:
+                    case 202:
+						pos += sprintf(pos, SEN_GET_DATA_SV_JSON, *name == '/' ? "" : "/SenData/", name, "Accepted", statusCode);
+						break;
 					case 404:
 						pos += sprintf(pos, SEN_GET_DATA_SV_JSON, *name == '/' ? "" : "/SenData/", name, "Not Found", statusCode);
 						break;
@@ -239,19 +251,27 @@ void WiseAgent_Response(int cmdId, char *handler, int deviceId, int itemId, char
                 sprintf(message,SEN_RENAME_RESPONSE, mac, cmdId, handler, sessionId, jsonvalue);
             break;*/
             case 524:
-                sprintf(message,SEN_GET_RESPONSE, cmdId, handler, sessionId, jsonvalue);
+				//PAAS1
+                //sprintf(message,SEN_GET_RESPONSE, cmdId, handler, sessionId, jsonvalue);
+				//PAAS2
+				sprintf(message,SEN_GET_RESPONSE, jsonvalue, cmdId, deviceId, handler, 0);
 				response = message;
             break;
             case 526:
-                sprintf(message,SEN_SET_RESPONSE, cmdId, handler, sessionId, jsonvalue);
+				//PAAS1
+                //sprintf(message,SEN_SET_RESPONSE, cmdId, handler, sessionId, jsonvalue);
+				//PAAS2
+				sprintf(message,SEN_SET_RESPONSE, jsonvalue, cmdId, deviceId, handler, 0);
 				response = message;
             break;
 			case 2052:
 				if(deviceId == 0) {
 					WiseMem_Release();
 					core_platform_register();
-					WiseAgent_PublishInterfaceInfoSpecMessage(gatewayId);
-					WiseAgent_PublishInterfaceDeviceInfoMessage(gatewayId);
+					//WiseAgent_PublishInterfaceInfoSpecMessage(gatewayId);
+					//WiseAgent_PublishInterfaceDeviceInfoMessage(gatewayId);
+					WiseAgent_PublishInterfaceInfoSpecMessage(gGwId);					
+					WiseAgent_PublishInterfaceDeviceInfoMessage(gGwId);
 					WiseAccess_RepublishSensorConnectMessage();
 					response = NULL;
 				} else {
@@ -328,7 +348,7 @@ void CmdReceive(const char *topic, const void *payload, const long pktlength) {
 	static char value[1024] = {0};
     int cmdId;
     char *start;
-	char *target;
+	char *target = NULL;
     char *end;
     int len;
     int search;
@@ -420,7 +440,8 @@ void CmdReceive(const char *topic, const void *payload, const long pktlength) {
     case 2051:
     {
     	wiseprint("get capability\n");
-		start = strstr(topic,"/cagent/admin/") + 14;
+		//start = strstr(topic,"/cagent/admin/") + 14;			//PAAS1
+		start = strstr(topic,"/wisepaas/general/device/") + 25;	//PAAS2
 		end = strstr(start,"/");
 		len = (long)(end-start);
 		strncpy(clientId,start,len);
@@ -460,7 +481,8 @@ void CmdReceive(const char *topic, const void *payload, const long pktlength) {
 			target = buffer;
 			
 		} else if(strlen(handlerName) == 6 && strncmp(handlerName,"SenHub",6) == 0) {
-			start = strstr(topic,"/cagent/admin/") + 14;
+			//start = strstr(topic,"/cagent/admin/") + 14;			//PAAS1
+			start = strstr(topic,"/wisepaas/general/device/") + 25;	//PAAS2
 			end = strstr(start,"/");
 			len = (long)(end-start);
 			strncpy(clientId,start,len);
@@ -614,7 +636,9 @@ void WiseAccess_Init(char *default_gwName, char *gwMac) {
     memset(gGWName, 0, sizeof(gGWName));
 
     //GW Name
-    sprintf(gGWName, "%s(%s)",default_gwName, gwMac + (strlen(gwMac) - 4));
+	sprintf(gGWName, "%s(%s)",default_gwName, gwMac + (strlen(gwMac) - 4));
+	
+	strcpy(gGwId,gwMac);
 }
 
 
@@ -791,10 +815,12 @@ void WiseAccess_GetTopology() {
 	
 	char *target = gIf_SenHublist;
 	if(count == 0) {
-		target += sprintf(gIf_SenHublist,"%s",gDevices[0].cliendId);
-		*(target+2) = 0;
+		/*target += sprintf(gIf_SenHublist,"%s",gDevices[0].cliendId);
+		*(target+2) = 0;*/
+        memset(gIf_SenHublist, 0, sizeof(gIf_SenHublist));
 	} else {
-		sprintf(gIf_SenHublist,"%s,%s",gDevices[0].cliendId, topology);
+		//sprintf(gIf_SenHublist,"%s,%s",gDevices[0].cliendId, topology);
+        sprintf(gIf_SenHublist,"%s",topology);
 	}
 	
 	WiseMem_Release();
@@ -840,9 +866,6 @@ void WiseAccess_GenerateTokenCapability(char *deviceId, char *token, char *buffe
 					case WISE_STRING:
 						pos += sprintf(pos, ",\"sv\":\"%s\"", item->string);
 						break;
-					/*default:
-						wiseprint("Datatype error!!\n");
-						infiniteloop();*/
 				}
 				
 				if(item->setValue == NULL) {
