@@ -22,6 +22,7 @@
 typedef struct{
 	/*clinet info, user must define*/
 	char strClientID[DEF_DEVID_LENGTH];
+	char strTenantID[DEF_DEVID_LENGTH];		//PAAS2
 	char strHostName[DEF_HOSTNAME_LENGTH];
 	char strMAC[DEF_MAC_LENGTH];
 
@@ -31,6 +32,7 @@ typedef struct{
 	char strType[DEF_MAX_STRING_LENGTH];
 	char strProduct[DEF_MAX_STRING_LENGTH];
 	char strManufacture[DEF_MAX_STRING_LENGTH];
+	char strTag[DEF_MAX_STRING_LENGTH];		//PAAS2
 	char strParentID[DEF_DEVID_LENGTH];
 
 	/*os info*/
@@ -52,6 +54,7 @@ typedef struct{
 	/*client status*/
 	lite_conn_status iStatus;
 	int pSocketfd;
+	void* userdata;			//PAAS2
 }core_contex_t;
 
 typedef enum{
@@ -99,21 +102,78 @@ typedef enum {
 #define DEF_SERVERCTL_STATUS				"\"statuscode\":%d"
 #define DEF_WISE_TIMESTAMP					"\"sendTS\":%d"
 
-#define DEF_WILLMSG_TOPIC					"/cagent/admin/%s/willmessage"	/*publish*/
-#define DEF_INFOACK_TOPIC					"/cagent/admin/%s/agentinfoack"	/*publish*/
-#define DEF_AGENTINFO_JSON					"{\"susiCommData\":{\"devID\":\"%s\",\"parentID\":\"%s\",\"hostname\":\"%s\",\"sn\":\"%s\",\"mac\":\"%s\",\"version\":\"%s\",\"type\":\"%s\",\"product\":\"%s\",\"manufacture\":\"%s\",\"account\":\"%s\",\"passwd\":\"%s\",\"status\":%d,\"commCmd\":1,\"requestID\":21,\"agentID\":\"%s\",\"handlerName\":\"general\",\"sendTS\":{\"$date\":%lld}}}"
+//PAAS1
+//#define DEF_WILLMSG_TOPIC					"/cagent/admin/%s/willmessage"	/*publish*/
+//PAAS2
+#define DEF_WILLMSG_TOPIC					"/wisepaas/general/device/%s/willmessage"	/*publish*/
+
+//PAAS1
+//#define DEF_INFOACK_TOPIC					"/cagent/admin/%s/agentinfoack"	/*publish*/
+//PAAS2
+#define DEF_INFOACK_TOPIC					"/wisepaas/general/device/%s/agentinfoack"	/*publish*/
+
+//PAAS1
+//#define DEF_AGENTINFO_JSONDEF_AGENTINFO_JSON					"{\"susiCommData\":{\"devID\":\"%s\",\"parentID\":\"%s\",\"hostname\":\"%s\",\"sn\":\"%s\",\"mac\":\"%s\",\"version\":\"%s\",\"type\":\"%s\",\"product\":\"%s\",\"manufacture\":\"%s\",\"account\":\"%s\",\"passwd\":\"%s\",\"status\":%d,\"commCmd\":1,\"requestID\":21,\"agentID\":\"%s\",\"handlerName\":\"general\",\"sendTS\":{\"$date\":%lld}}}"
+//PAAS2
+#define DEF_AGENTINFO_JSON                  "{\"content\":{\"parentID\":\"%s\",\"hostname\":\"%s\",\"sn\":\"%s\",\"mac\":\"%s\",\"version\":\"%s\",\"type\":\"%s\",\"product\":\"%s\",\"manufacture\":\"%s\",\"account\":\"%s\",\"passwd\":\"%s\",\"status\":%d,\"tag\":\"%s\"},\"commCmd\":1,\"agentID\":\"%s\",\"handlerName\":\"general\",\"sendTS\":{\"$date\":%lld}}"
+
+//PAAS1
 #define DEF_AGENTACT_TOPIC					"/cagent/admin/%s/agentactionreq"	/*publish*/
-#define DEF_AGENTCAPABILITY_TOPIC			"/cagent/admin/%s/deviceinfo"	/*publish*/
-#define DEF_EVENTNOTIFY_TOPIC				"/cagent/admin/%s/eventnotify"	/*publish*/
-#define DEF_CALLBACKREQ_TOPIC				"/cagent/admin/%s/agentcallbackreq"	/*Subscribe*/
-#define DEF_ACTIONACK_TOPIC					"/cagent/admin/%s/agentactionack"	/*Subscribe*/
-#define DEF_AGENTCONTROL_TOPIC				"/server/admin/+/agentctrl"	/*Subscribe*/
-#define DEF_HEARTBEAT_TOPIC					"/cagent/admin/%s/notify"	/*publish*/
-#define DEF_OSINFO_JSON						"{\"susiCommData\":{\"osInfo\":{\"cagentVersion\":\"%s\",\"cagentType\":\"%s\",\"osVersion\":\"%s\",\"biosVersion\":\"%s\",\"platformName\":\"%s\",\"processorName\":\"%s\",\"osArch\":\"%s\",\"totalPhysMemKB\":%d,\"macs\":\"%s\",\"IP\":\"%s\"},\"commCmd\":116,\"requestID\":109,\"agentID\":\"%s\",\"handlerName\":\"general\",\"sendTS\":{\"$date\":%lld}}}"
-#define DEF_ACTION_RESPONSE_SESSION_JSON	"{\"susiCommData\":{\"commCmd\":%d,\"catalogID\":4,\"handlerName\":\"general\",\"result\":\"%s\",\"sessionID\":\"%s\"}}"
-#define DEF_ACTION_RESPONSE_JSON			"{\"susiCommData\":{\"commCmd\":%d,\"catalogID\":4,\"handlerName\":\"general\",\"result\":\"%s\"}}"
+//PAAS2
+#define DEF_AGENTACT_TOPIC					"/wisepaas/general/device/%s/agentactionack"	/*publish "/wisepaas/<tenantId>/<productTag>/<devId>/agentactionack"*/
+
+//PAAS1
+//#define DEF_AGENTCAPABILITY_TOPIC			"/cagent/admin/%s/deviceinfo"	/*publish*/
+
+//PAAS1
+//#define DEF_EVENTNOTIFY_TOPIC				"/cagent/admin/%s/eventnotify"	/*publish*/
+//PAAS2
+#define DEF_EVENTNOTIFY_TOPIC				"/wisepaas/general/device/%s/eventnotifyack"	/*publish "/wisepaas/<tenantId>/<productTag>/<devId>/eventnotifyack"*/
+
+//PAAS1
+//#define DEF_CALLBACKREQ_TOPIC				"/cagent/admin/%s/agentcallbackreq"	/*Subscribe*/
+//PAAS2
+#define DEF_CALLBACKREQ_TOPIC				"/wisepaas/general/device/%s/agentactionreq"	/*Subscrib "/wisepaas/<tenantId>/<productTag>/<devId>/agentactionreq"e*/
+
+//PAAS1
+//#define DEF_ACTIONACK_TOPIC					"/cagent/admin/%s/"	/*Subscribe*/
+
+//PAAS1
+//#define DEF_AGENTCONTROL_TOPIC				"/server/admin/+/agentctrl"	/*Subscribe*/
+//PAAS2
+#define DEF_AGENTCONTROL_TOPIC				"/wisepaas/general/device/+/agentctrlreq"	/*Subscribe*/
+
+//PAAS1
+//#define DEF_HEARTBEAT_TOPIC					"/cagent/admin/%s/notify"	/*publish*/
+//PAAS2
+#define DEF_HEARTBEAT_TOPIC					"/wisepaas/general/device/%s/notifyack"	/*publish*/
+
+//PAAS1
+//#define DEF_OSINFO_JSON						"{\"susiCommData\":{\"osInfo\":{\"cagentVersion\":\"%s\",\"cagentType\":\"%s\",\"osVersion\":\"%s\",\"biosVersion\":\"%s\",\"platformName\":\"%s\",\"processorName\":\"%s\",\"osArch\":\"%s\",\"totalPhysMemKB\":%d,\"macs\":\"%s\",\"IP\":\"%s\"},\"commCmd\":116,\"requestID\":109,\"agentID\":\"%s\",\"handlerName\":\"general\",\"sendTS\":{\"$date\":%lld}}}"
+//PAAS2
+#define DEF_OSINFO_JSON						"{\"content\":{\"cagentVersion\":\"%s\",\"cagentType\":\"%s\",\"osVersion\":\"%s\",\"biosVersion\":\"%s\",\"platformName\":\"%s\",\"processorName\":\"%s\",\"osArch\":\"%s\",\"totalPhysMemKB\":%d,\"macs\":\"%s\",\"IP\":\"%s\"},\"commCmd\":116,\"agentID\":\"%s\",\"handlerName\":\"general\",\"sendTS\":{\"$date\":%lld}}"
+
+//PAAS1
+//#define DEF_ACTION_RESPONSE_SESSION_JSON	"{\"susiCommData\":{\"commCmd\":%d,\"catalogID\":4,\"handlerName\":\"general\",\"result\":\"%s\",\"sessionID\":\"%s\"}}"
+
+
+//PAAS2
+#define DEF_ACTION_RESULT_SESSION_JSON		"{\"agentID\":\"%s\",\"commCmd\":%d,\"handlerName\":\"general\",\"content\":{\"result\":\"%s\"},\"sessionID\":\"%s\",\"sendTS\":{\"$date\":%lld}}"
+#define DEF_ACTION_RESULT_JSON				"{\"agentID\":\"%s\",\"commCmd\":%d,\"handlerName\":\"general\",\"content\":{\"result\":\"%s\"},\"sendTS\":{\"$date\":%lld}}"
+#define DEF_AUTOREPORT_JSON					"{\"agentID\":\"%s\",\"commCmd\":2055,\"handlerName\":\"general\",\"content\":%s,\"sendTS\":{\"$date\":%lld}}"
+
+//PAAS1
+#define DEF_ACTION_RESPONSE_JSON			"{\"susiCommagentactionackData\":{\"commCmd\":%d,\"catalogID\":4,\"handlerName\":\"general\",\"result\":\"%s\"}}"
+//PAAS2
+#define DEF_ACTION_RESPONSE_JSON			"{\"agentID\":\"%s\",\"commCmd\":%d,\"handlerName\":\"%s\",\"content\":%s,\"sendTS\":{\"$date\":%lld}}"
+
 #define DEF_HEARTBEAT_MESSAGE_JSON			"{\"hb\":{\"devID\":\"%s\"}}"
-#define DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON	"{\"susiCommData\":{\"commCmd\":%d,\"catalogID\":4,\"handlerName\":\"general\",\"heartbeatrate\":%d,\"sessionID\":\"%s\"}}"
+
+//PAAS1
+//#define DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON	"{\"susiCommData\":{\"commCmd\":%d,\"catalogID\":4,\"handlerName\":\"general\",\"heartbeatrate\":%d,\"sessionID\":\"%s\"}}"
+//PAAS2
+#define DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON	"{\"agentID\":\"%s\",\"commCmd\":%d,\"handlerName\":\"general\",\"content\":{\"heartbeatrate\":%d},\"sessionID\":\"%s\",\"sendTS\":{\"$date\":%lld}}"
+
 
 CORE_CONNECTED_CALLBACK g_on_connect_cb = NULL;
 CORE_LOSTCONNECTED_CALLBACK g_on_lostconnect_cb = NULL;
@@ -155,8 +215,11 @@ bool _get_agentinfo_string(core_contex_t* pHandle, lite_conn_status iStatus, cha
 		return false;
 	}
 
-	tick = 0;//(long long) time((time_t *) NULL);
+	//tick = 0;//(long long) time((time_t *) NULL);
+	tick = 160081020;	//samlin+
 
+//PAAS1
+/*
 	iRet = snprintf(strInfo, iLength, DEF_AGENTINFO_JSON, pHandle->strClientID?pHandle->strClientID:"",
 												 pHandle->strParentID?pHandle->strParentID:"",
 												 pHandle->strHostName?pHandle->strHostName:"",
@@ -171,6 +234,24 @@ bool _get_agentinfo_string(core_contex_t* pHandle, lite_conn_status iStatus, cha
 												 iStatus,
 												 pHandle->strClientID,
 												 tick);
+*/
+
+//PAAS2
+	iRet = snprintf(strInfo, iLength, DEF_AGENTINFO_JSON, pHandle->strParentID?pHandle->strParentID:"",
+												 pHandle->strHostName?pHandle->strHostName:"",
+												 pHandle->strSerialNum?pHandle->strSerialNum:(pHandle->strMAC?pHandle->strMAC:""),
+												 pHandle->strMAC?pHandle->strMAC:"",
+												 pHandle->strVersion?pHandle->strVersion:"",
+												 pHandle->strType?pHandle->strType:"IPC",
+												 pHandle->strProduct?pHandle->strProduct:"",
+												 pHandle->strManufacture?pHandle->strManufacture:"",
+												 pHandle->strLoginID?pHandle->strLoginID:"anonymous",
+												 pHandle->strLoginPW?pHandle->strLoginPW:"",
+												 iStatus,
+												 pHandle->strTag?pHandle->strTag:"",
+												 pHandle->strClientID,
+												 tick);
+
 	if(iRet>=0)
 	{
 		g_iErrorCode = core_success;
@@ -193,8 +274,10 @@ bool _send_agent_connect(core_contex_t* pHandle)
 
 	if(!_get_agentinfo_string(pHandle, core_online, strPayloadBuff, sizeof(strPayloadBuff)))
 		return false;
-	sprintf(strTopicBuff, DEF_INFOACK_TOPIC, pHandle->strClientID);
-	
+
+	sprintf(strTopicBuff, DEF_INFOACK_TOPIC, pHandle->strClientID);							//PAAS1
+	//sprintf(strTopicBuff, DEF_INFOACK_TOPIC, "general", "device", pHandle->strClientID);	//PAAS2
+
 	if(wc_publish((char *)strTopicBuff, strPayloadBuff, strlen(strPayloadBuff), true, 2))
 	{
 		g_iErrorCode = core_success;
@@ -217,7 +300,8 @@ bool _send_agent_disconnect(core_contex_t* pHandle)
 
 	if(!_get_agentinfo_string(pHandle, core_offline, strPayloadBuff, sizeof(strPayloadBuff)))
 		return false;
-	sprintf(strTopicBuff, DEF_INFOACK_TOPIC, pHandle->strClientID);
+	sprintf(strTopicBuff, DEF_INFOACK_TOPIC, pHandle->strClientID);							//PAAS1
+    //sprintf(strTopicBuff, DEF_INFOACK_TOPIC, "general", "device", pHandle->strClientID);	//PAAS2
 
 	if(wc_publish((char *)strTopicBuff, strPayloadBuff, strlen(strPayloadBuff), true, 2))
 	{
@@ -280,6 +364,8 @@ void _on_connect_cb(void *pUserData)
 		pHandle->pSocketfd = socketfd;
 		pHandle->iStatus = core_online;
 
+//PAAS1
+/*
 		if(strlen(pHandle->strLocalIP)<=0)
 		{
 			if(wc_address_get(strLocalIP))
@@ -287,10 +373,13 @@ void _on_connect_cb(void *pUserData)
 				strncpy(pHandle->strLocalIP, strLocalIP, sizeof(pHandle->strLocalIP));
 			}
 		}
+*/		
+
 	}
 
 	if(g_on_connect_cb)
-		g_on_connect_cb();
+		g_on_connect_cb();							//PAAS1
+		//g_on_connect_cb(pHandle->userdata);		//PAAS2
 }
 
 void _on_lostconnect_cb(void *pUserData)
@@ -304,7 +393,8 @@ void _on_lostconnect_cb(void *pUserData)
 	}
 
 	if(g_on_lostconnect_cb)
-		g_on_lostconnect_cb();
+		g_on_lostconnect_cb();						//PAAS1
+		//g_on_connect_cb(pHandle->userdata);		//PAAS2
 }
 
 void _on_disconnect_cb(void *pUserData)
@@ -318,7 +408,8 @@ void _on_disconnect_cb(void *pUserData)
 	}
 
 	if(g_on_disconnect_cb)
-		g_on_disconnect_cb();
+		g_on_disconnect_cb();						//PAAS1
+		//g_on_disconnect_cb(pHandle->userdata);	//PAAS2
 }
 
 void _on_rename(core_contex_t* pHandle, char* cmd, const char* strDevID)
@@ -332,7 +423,8 @@ void _on_rename(core_contex_t* pHandle, char* cmd, const char* strDevID)
 	strncpy(pHandle->strHostName, strName, sizeof(pHandle->strHostName));
 
 	if(g_on_rename_cb)
-		g_on_rename_cb(strName, wise_cagent_rename_rep, strSessionID, strDevID);
+		g_on_rename_cb(strName, wise_cagent_rename_rep, strSessionID, strDevID);		//PAAS1
+		//g_on_rename_cb(strName, wise_cagent_rename_rep, strSessionID, strTenantID, strClientID, pHandle->userdata);		//PAAS2
 }
 
 void _on_update(core_contex_t* pHandle, char* cmd, const char* strDevID)
@@ -356,7 +448,8 @@ void _on_update(core_contex_t* pHandle, char* cmd, const char* strDevID)
 	}
 
 	if(g_on_update_cb)
-		g_on_update_cb(strUserName, strPwd, iPort, strPath, strMD5, wise_update_cagent_rep, strSessionID, strDevID);
+		g_on_update_cb(strUserName, strPwd, iPort, strPath, strMD5, wise_update_cagent_rep, strSessionID, strDevID);	//PAAS1
+		//g_on_update_cb(strUserName, strPwd, iPort, strPath, strMD5, wise_update_cagent_rep, strSessionID, strTenantID, strClientID, pHandle->userdata);	//PAAS2
 }
 
 void _on_heartbeatrate_query(core_contex_t* pHandle, char* cmd, const char* strDevID)
@@ -366,7 +459,8 @@ void _on_heartbeatrate_query(core_contex_t* pHandle, char* cmd, const char* strD
 	lp_value_get(cmd, "sessionID", strSessionID, sizeof(strSessionID));
 
 	if(g_on_query_heartbeatrate)
-		g_on_query_heartbeatrate(strSessionID, strDevID);
+		g_on_query_heartbeatrate(strSessionID, strDevID);										//PAAS1
+		//g_on_query_heartbeatrate(strSessionID, strTenantID, strClientID, pHandle->userdata);	//PAAS2
 }
 
 void _on_heartbeatrate_update(core_contex_t* pHandle, char* cmd, const char* strDevID)
@@ -379,79 +473,145 @@ void _on_heartbeatrate_update(core_contex_t* pHandle, char* cmd, const char* str
 	lp_value_get(cmd, "heartbeatrate", strRate, sizeof(strRate));
 	iRate = atoi(strRate);
 	if(g_on_update_heartbeatrate)
-		g_on_update_heartbeatrate(iRate, strSessionID, strDevID);
+		g_on_update_heartbeatrate(iRate, strSessionID, strDevID);										//PAAS1
+		//g_on_update_heartbeatrate(iRate, strSessionID, strTenantID, strClientID, pHandle->userdata);	//PAAS2
 }
 
 void _on_server_reconnect(core_contex_t* pHandle, const char* strDevID)
 {
 	if(g_on_server_reconnect)
-		g_on_server_reconnect(strDevID);
+		g_on_server_reconnect(strDevID);										//PAAS1
+		//g_on_server_reconnect(strTenantID, strClientID, pHandle->userdata);	//PAAS2
 }
+
+
+//PAAS2
+void _get_tenantid(const char* topic, char* tenantid)
+{
+//#ifdef _WISEPAAS_02_DEF_H_
+	int pos = 2;
+	char *start = NULL, *end = NULL;
+	if(topic == NULL) return;
+	if(tenantid == NULL) return;
+	start = strstr(topic, "/wisepaas/"); //verify support topic start with "/wisepaas/"
+	if(start)
+	{
+		while(pos >0)
+		{
+			start = strstr(start, "/")+1;
+			if(start == 0)
+				return;
+			pos--;
+		}
+		end = strstr(start, "/");
+		if(end)
+			strncpy(tenantid, start, end-start);
+	}
+//#else
+//	strcpy(tenantid, "");
+//#endif
+}
+
+
 
 void _get_devid(const char* topic, char* devid)
 {
 	char *start = NULL, *end = NULL;
+//PAAS1	
+/*
 	if(topic == NULL) return;
 	if(devid == NULL) return;
 	start = strstr(topic, "/cagent/admin/") + strlen("/cagent/admin/");
 	end = strstr(start, "/");
 	strncpy(devid, start, end-start);
+*/
+
+//PAAS2
+	int pos = 4;
+	if(topic == NULL) return;
+	if(devid == NULL) return;
+	start = strstr(topic, "/wisepaas/"); //verify support topic start with "/wisepaas/"
+	if(start)
+	{
+		while(pos >0)
+		{
+			start = strstr(start, "/")+1;
+			if(start == 0)
+				return;
+			pos--;
+		}
+		end = strstr(start, "/");
+		if(end)
+			strncpy(devid, start, end-start);
+	}	
 }
 
 bool check_cmd(char *payload, char *fmt, wise_comm_cmd_t comm) {
 	char cmd[16] = {0};
 	sprintf(cmd, fmt, comm);
-	return strstr((char*)payload, cmd);
+	//return strstr((char*)payload, cmd);	//PAAS1
+	return strstr((char*)payload, cmd)>0;	//PAAS2
 }
 
 void _on_message_recv(const char* topic, const void* payload, const int payloadlen, void *pUserData)
 {
 	core_contex_t* pHandle = (core_contex_t*)pUserData;
-	char* devID[16] = {0};
+	//char* devID[16] = {0};	//PAAS1
+	char* devID[37] = {0};		//PAAS2
+	char tenantID[37] = {0};	//PAAS2
 	_get_devid(topic, devID);
+	_get_tenantid(topic, tenantID);	//PAAS2
 	if(strstr((char*)payload, DEF_GENERAL_HANDLER))
 	{
 		if(g_on_rename_cb && check_cmd(payload, DEF_WISE_COMMAND, wise_cagent_rename_req))
 		{
-			_on_rename(pHandle, (char*)payload, devID);
+			_on_rename(pHandle, (char*)payload, devID);				//PAAS1
+			//_on_rename(pHandle, (char*)payload, tenantID, devID);	//PAAS2
 			return;
 	    }
 		if(g_on_update_cb && check_cmd(payload, DEF_WISE_COMMAND, wise_update_cagent_req))
 			{
-			_on_update(pHandle, (char*)payload, devID);
+			_on_update(pHandle, (char*)payload, devID);				//PAAS1
+			//_on_update(pHandle, (char*)payload, tenantID, devID);	//PAAS2
 			return;
 			}
 		if(check_cmd(payload, DEF_WISE_COMMAND, wise_server_control_req))
 		{
 			if(check_cmd(payload, DEF_SERVERCTL_STATUS, 4)) //server reconnect.
 			{
-				_on_server_reconnect(pHandle, devID);
+				_on_server_reconnect(pHandle, devID);				//PAAS1
+				//_on_server_reconnect(pHandle, tenantID, devID);	//PAAS2
 				return;
 			}
 		}
 		if(check_cmd(payload, DEF_WISE_COMMAND, wise_heartbeatrate_query_req))
 		{
-			_on_heartbeatrate_query(pHandle, (char*)payload, devID);
+			_on_heartbeatrate_query(pHandle, (char*)payload, devID);				//PAAS1
+			//_on_heartbeatrate_query(pHandle, (char*)payload, tenantID, devID);	//PAAS2
 			return;
 		}
 		if(check_cmd(payload, DEF_WISE_COMMAND, wise_heartbeatrate_update_req))
 		{
-			_on_heartbeatrate_update(pHandle, (char*)payload, devID);
+			_on_heartbeatrate_update(pHandle, (char*)payload, devID);				//PAAS1
+			//_on_heartbeatrate_update(pHandle, (char*)payload, tenantID, devID);	//PAAS2
 			return;
 		}
 		if(g_on_get_capability && check_cmd(payload, DEF_WISE_COMMAND, wise_info_spec_req))
 		{
-			g_on_get_capability(payload, payloadlen, devID);
+			g_on_get_capability(payload, payloadlen, devID);								//PAAS1
+			//g_on_get_capability(payload, payloadlen, tenantID, devID, pHandle->userdata);	//PAAS2
 			return;
 		}
 		if(g_on_start_report && check_cmd(payload, DEF_WISE_COMMAND, wise_start_auto_upload_req))
 			{
-			g_on_start_report(payload, payloadlen, devID);
+			g_on_start_report(payload, payloadlen, devID);									//PAAS1
+			//g_on_start_report(payload, payloadlen, tenantID, devID, pHandle->userdata);	//PAAS2
 			return;
 			}
 		if(g_on_stop_report && check_cmd(payload, DEF_WISE_COMMAND, wise_stop_auto_upload_req))
 		{
-			g_on_stop_report(payload, payloadlen, devID);
+			g_on_stop_report(payload, payloadlen, devID);									//PAAS1
+			//g_on_stop_report(payload, payloadlen, tenantID, devID, pHandle->userdata);	//PAAS2
 			return;
 		}
 	}
@@ -493,8 +653,10 @@ WISECORE_API bool core_initialize(char* strClientID, char* strHostName, char* st
 	}
 
 	memset(&g_tHandleCtx, 0, sizeof(core_contex_t));
-	g_tick = 0;
+	//g_tick = 0;
 	strncpy(g_tHandleCtx.strClientID, strClientID, sizeof(g_tHandleCtx.strClientID));
+	//strncpy(g_tHandleCtx.strTenantID, strTenantID, sizeof(g_tHandleCtx.strTenantID));	//PAAS2
+	strncpy(g_tHandleCtx.strTenantID, "general", sizeof(g_tHandleCtx.strTenantID));		//PAAS2
 	strncpy(g_tHandleCtx.strHostName, strHostName, sizeof(g_tHandleCtx.strHostName));
 	strncpy(g_tHandleCtx.strMAC, strMAC, sizeof(g_tHandleCtx.strMAC));
 
@@ -518,7 +680,7 @@ WISECORE_API void core_uninitialize()
 		wc_callback_set(NULL, NULL, NULL, NULL);
 		wc_uninitialize();
 	}
-	g_tick = 0;
+	//g_tick = 0;
 }
 
 WISECORE_API bool core_product_info_set(char* strSerialNum, char* strParentID, char* strVersion, char* strType, char* strProduct, char* strManufacture)
@@ -769,6 +931,22 @@ WISECORE_API bool core_action_callback_set(CORE_RENAME_CALLBACK on_rename, CORE_
 	return true;
 }
 
+//PAAS2
+WISECORE_API bool core_tag_set(char* strTag)
+{
+	if(!g_bInited)
+	{
+		g_iErrorCode = core_no_init;
+		return false;
+	}
+
+	if(strTag)
+		strncpy(g_tHandleCtx.strTag, strTag, sizeof(g_tHandleCtx.strTag));
+
+	g_iErrorCode = core_success;
+	return true;
+}
+
 WISECORE_API bool core_action_response(const int cmdid, const char * sessoinid, bool success, const char* devid)
 {
 	if(!g_bInited)
@@ -784,9 +962,11 @@ WISECORE_API bool core_action_response(const int cmdid, const char * sessoinid, 
 	}
 
 	if(sessoinid)
-		snprintf(strPayloadBuff, sizeof(strPayloadBuff), DEF_ACTION_RESPONSE_SESSION_JSON, cmdid, success?"SUCCESS":"FALSE", sessoinid);
+	  	//snprintf(strPayloadBuff, sizeof(strPayloadBuff), DEF_ACTION_RESPONSE_SESSION_JSON, cmdid, success?"SUCCESS":"FALSE", sessoinid);
+		snprintf(strPayloadBuff, sizeof(strPayloadBuff), DEF_ACTION_RESULT_SESSION_JSON, devid?devid:g_tHandleCtx.strClientID, cmdid, success?"SUCCESS":"FALSE", sessoinid, 0);
 	else
-		snprintf(strPayloadBuff, sizeof(strPayloadBuff), DEF_ACTION_RESPONSE_JSON, cmdid, success?"SUCCESS":"FALSE");
+		//snprintf(strPayloadBuff, sizeof(strPayloadBuff), DEF_ACTION_RESPONSE_JSON, cmdid, success?"SUCCESS":"FALSE");
+		snprintf(strPayloadBuff, sizeof(strPayloadBuff), DEF_ACTION_RESULT_JSON, devid?devid:g_tHandleCtx.strClientID, cmdid, success?"SUCCESS":"FALSE", 0);
 
 	sprintf(strTopicBuff, DEF_AGENTACT_TOPIC, devid?devid:g_tHandleCtx.strClientID);
 	if(wc_publish(strTopicBuff, strPayloadBuff, strlen(strPayloadBuff), false, 0))
@@ -872,7 +1052,13 @@ WISECORE_API bool core_heartbeatratequery_response(const int heartbeatrate, cons
 		g_iErrorCode = core_no_connnect;
 		return false;
 	}
-	sprintf(strPayloadBuff, DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON, wise_heartbeatrate_query_rep, heartbeatrate, sessoinid);
+
+//PAAS1
+//	sprintf(strPayloadBuff, DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON, wise_heartbeatrate_query_rep, heartbeatrate, sessoinid);
+//PAAS2	
+	//sprintf(strPayloadBuff, DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON, clientid, wise_heartbeatrate_query_rep, heartbeatrate, sessoinid, tick);
+	sprintf(strPayloadBuff, DEF_HEARTBEATRATE_RESPONSE_SESSION_JSON, devid, wise_heartbeatrate_query_rep, heartbeatrate, sessoinid, 0);
+
 	sprintf(strTopicBuff, DEF_AGENTACT_TOPIC, devid);
 	if(wc_publish((char *)strTopicBuff, strPayloadBuff, strlen(strPayloadBuff), false, 0))
 	{
@@ -941,8 +1127,9 @@ WISECORE_API bool core_device_register()
 	sprintf(strTopicBuff, DEF_CALLBACKREQ_TOPIC, g_tHandleCtx.strClientID);
 	wc_subscribe(strTopicBuff, 0);
 
-	sprintf(strTopicBuff, DEF_ACTIONACK_TOPIC, g_tHandleCtx.strClientID);
-	wc_subscribe(strTopicBuff, 0);
+//PAAS1
+//	sprintf(strTopicBuff, DEF_ACTIONACK_TOPIC, g_tHandleCtx.strClientID);
+//	wc_subscribe(strTopicBuff, 0);
 
 	wc_subscribe(DEF_AGENTCONTROL_TOPIC, 2);
 

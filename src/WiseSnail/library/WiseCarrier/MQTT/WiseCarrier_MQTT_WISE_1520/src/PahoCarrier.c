@@ -15,6 +15,8 @@
 #include "WISECarrier_MQTT.h"
 #include "wiseutility.h"
 
+#define CARRIER_DEBUG	1
+
 /*===============================================================*/
 /*Operate Lib in MQTT 3.1 mode.*/
 #define MQTT_3_1_1              false /*MQTT 3.1.1 */
@@ -135,6 +137,152 @@ static WICAR_CONNECT_CB g_connect_cb;
 static WICAR_DISCONNECT_CB g_disconnect_cb;
 static WICAR_LOSTCONNECT_CB g_lostconnect_cb;
 static void* g_userdata;
+
+#ifdef CARRIER_DEBUG
+void formattedPrintJson(char *instr)
+{
+	//#define MAX_MESSAGE_PRINT_LENGTH 10240
+    #define MAX_MESSAGE_PRINT_LENGTH 256
+	char outstr[MAX_MESSAGE_PRINT_LENGTH];
+    int length=0;
+    char newstr[2];
+    char *INDENT="    ";
+    //char *INDENT="\t";
+    int quoted  = 0;
+    int escaped = 0;
+    int indent  = 0;
+    int i=0;
+    int j = 0;
+
+
+    UART_PRINT("\n\r## msg = \n\r");
+
+    newstr[0] = 0x00;
+    newstr[1] = 0x00;
+
+    if (instr == NULL || strlen(instr) == 0)
+        return;
+
+    length = strlen (instr);
+
+    memset (outstr, 0 , MAX_MESSAGE_PRINT_LENGTH);
+
+    for (i = 0 ; i < length ; i++)
+    {
+        char ch = instr[i];
+	    //fprintf (stderr, "i=%d, ch=[%c]\n", i, ch);
+
+        switch (ch)
+        {
+            case '{':
+            case '[':
+				newstr[0]= ch;
+				strcat(outstr, newstr);	
+                if (!quoted)
+                {
+                    //strcat(outstr, "\n");
+                    UART_PRINT("%s\n\r",outstr);
+                    memset (outstr, 0 , MAX_MESSAGE_PRINT_LENGTH);
+
+                    if (!(instr[i+1] == '}' || instr[i+1] == ']'))
+                    {
+                        ++indent;
+
+                        for (j = 0 ; j < indent ; j++)
+                        {
+                            strcat(outstr, INDENT);
+                        }
+                    }
+                }
+
+                break;
+
+            case '}':
+            case ']':
+                if (!quoted)
+                {
+                    if ((i > 0) && (!(instr[i-1] == '{' || instr[i-1] == '[')))
+                    {
+						//strcat(outstr, "\n");
+                    	UART_PRINT("%s\n\r",outstr);
+                    	memset (outstr, 0 , MAX_MESSAGE_PRINT_LENGTH);
+                        --indent;
+
+                        for (j = 0 ; j < indent ; j++)
+                        {
+							strcat(outstr, INDENT);
+                        }
+                    }
+                    else if ((i > 0) && ((instr[i-1] == '[' && ch == ']') || (instr[i-1] == '{' && ch == '}')))
+                    {
+                        for (j = 0 ; j < indent ; j++)
+                        {
+							strcat(outstr, INDENT);
+                        }
+                    }
+                }
+
+				newstr[0]=ch;
+				strcat(outstr, newstr);
+
+                break;
+
+            case '"':
+				newstr[0]= ch;
+				strcat(outstr, newstr);
+                escaped = 1;
+
+                if (i > 0 && instr[i-1] == '\\')
+                {
+                    escaped = !escaped;
+                }
+
+                if (!escaped)
+                {
+                    quoted = !quoted;
+                }
+
+                break;
+
+            case ',':
+				newstr[0]= ch;
+				strcat(outstr, newstr);
+                if (!quoted)
+                {
+                    //strcat(outstr, "\n");
+                    UART_PRINT("%s\n\r",outstr);
+                    memset (outstr, 0 , MAX_MESSAGE_PRINT_LENGTH);
+                    for (j = 0 ; j < indent ; j++)
+                    {
+						strcat(outstr, INDENT);
+                    }
+                }
+
+                break;
+
+            case ':':
+				newstr[0]= ch;
+				strcat(outstr, newstr);
+                if (!quoted)
+                {
+		    		strcat(outstr, "");
+                }
+
+                break;
+
+            default:
+				newstr[0]= ch;
+				strcat(outstr, newstr);
+                break;
+        }
+    }
+
+	//fprintf (stderr, "<%s> message=\n%s\n\n",__FUNCTION__, outstr);
+    UART_PRINT("%s\n\r",outstr);
+    memset (outstr, 0 , MAX_MESSAGE_PRINT_LENGTH);
+    UART_PRINT("\n\n");
+}
+#endif
 
 /******************************************************************************************/
 //****************************************************************************
@@ -361,10 +509,11 @@ WISE_CARRIER_API bool WiCar_MQTT_SetTlsPsk(const char *psk,
 
 WISE_CARRIER_API bool WiCar_MQTT_Reconnect() {
 	//RebootMCU(60);
+	int ret;
+
 	if (connconf->is_connected == true)
 		sl_ExtLib_MqttClientDisconnect((void*) connconf->clt_ctx);
 
-	int ret;
 	ret = sl_ExtLib_MqttClientConnect((void*) connconf->clt_ctx,
 			connconf->is_clean, connconf->keep_alive_time);
 	if (ret & 0xff != 0) {
@@ -457,6 +606,17 @@ WISE_CARRIER_API bool WiCar_MQTT_Disconnect(int force) {
 
 WISE_CARRIER_API bool WiCar_MQTT_Publish(const char* topic, const void *msg,
 		int msglen, int retain, int qos) {
+
+	bool retval = false;
+	qos=0;		//samlin+ forcibly assign qos to 0
+	retain=0;	//samlin+ forcibly assign retain to 0
+
+#ifdef CARRIER_DEBUG
+	wiseprint("\r\nPub retain=%d qos=%d\r\n", retain, qos);
+	wiseprint("\r\ntopic = [%s]\r\n",topic);
+	formattedPrintJson (msg);
+#endif
+		
 	if(connconf->is_connected == true) {
 		int ret = 0;
 		wiseprint("## topic = [%s]\r\n",topic);
@@ -467,16 +627,30 @@ WISE_CARRIER_API bool WiCar_MQTT_Publish(const char* topic, const void *msg,
 			g_lostconnect_cb(g_userdata);
 			if(WiCar_MQTT_Reconnect()) {
 				ret = sl_ExtLib_MqttClientSend((void*) connconf->clt_ctx, topic, msg, msglen, qos, retain);
-				return true;
+				if(ret < 0)
+					retval = false;
+				else
+					retval = true;
 			}
-			return false;
+		} else {
+			retval = true;
 		}
-		return true;
 	}
-	return false;
+
+#ifdef CARRIER_DEBUG
+	if(retval == true)
+		wiseprint("\r\nPub ok\r\n");
+	else
+		wiseprint("\r\nPub fail\r\n");
+#endif
+
+	return retval;
 }
 
 WISE_CARRIER_API bool WiCar_MQTT_Subscribe(const char* topic, int qos, WICAR_MESSAGE_CB on_recieve) {
+
+	qos=0;		//samlin+ forcibly assign qos to 0
+
 	if (gSubCount == MAX_SUBS)
 		return false;
 	//
