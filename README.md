@@ -1,6 +1,5 @@
 # WISE-1520-EI-PaaS
-This repository aims to patch WISE-1520 SDK v1.1.04.0239 in order to connect to WISE-PaaS 2.0
-Source code is based on wise1520_sdk_v1.1.04.0239.zip.
+This repository aims to patch WISE-1520 SDK v1.1.04.0239 in order to connect to EI-PaaS. Source code is based on wise1520_sdk_v1.1.04.0239.zip.
 
 Patch Step:
 
