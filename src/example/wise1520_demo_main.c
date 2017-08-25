@@ -136,7 +136,14 @@
 #define AGENT_REFLASH_TIME              30
 #define AGENT_REFLASH_TIME_GAP		    1000
 #define AGENT_SERVER_NAME_LEN_MAX		64
-#define AGENT_DEFAULT_SERVER_NAME		"m2com-standard.eastasia.cloudapp.azure.com"
+
+//PAAS1
+//#define AGENT_DEFAULT_SERVER_NAME		"m2com-standard.eastasia.cloudapp.azure.com"
+//PAAS2
+#define AGENT_DEFAULT_SERVER_NAME		"wise-msghub.eastasia.cloudapp.azure.com"
+#define PAAS_ID                         "0e95b665-3748-46ce-80c5-bdd423d7a8a5:b69f6f36-ad5b-4126-abfb-be5443a07c73"
+#define PAAS_PW                         "24s04jv4mtb0oq4eiruehf0r22"
+
 #endif /* endif AGENT_APP_EXAMPLE */
 
 // Application specific status/error codes
@@ -332,7 +339,8 @@ WiseSnail_InfoSpec infospec[] = {
 				0,
 				100,
 				"ucum.%"
-		},
+#if 0   //#samlin-
+        },
         {
                 WISE_BOOL,
                 "GPIO1",
@@ -352,6 +360,7 @@ WiseSnail_InfoSpec infospec[] = {
                 1,
                 "",
                 SetGPIO_2
+#endif
         }
 };
 
@@ -365,6 +374,7 @@ WiseSnail_Data data[] = {
 				WISE_VALUE,
 				"Humidity",
 				55
+#if 0 //samlin-
 		},
         {
                 WISE_BOOL,
@@ -375,6 +385,7 @@ WiseSnail_Data data[] = {
                 WISE_BOOL,
                 "GPIO2",
                 0
+#endif
         }
 };
 
@@ -1869,7 +1880,9 @@ static long lRunStationMode(void)
 	WiseSnail_Init(MODELNAME,NULL, NULL, NULL, 0);
 	WiseSnail_RegisterInterface(mac, "Ethernet", 0, interface, 1);
 
-    if(WiseSnail_Connect(g_tAppCfg.tAgentCfg.aucServerName, 1883, "", "", NULL, 0) == 0) {
+    //samlin+ forcibly use WISE-PaaS 2.0 url instead of reading config
+	//if(WiseSnail_Connect(g_tAppCfg.tAgentCfg.aucServerName, 1883, PAAS_ID, PAAS_PW, NULL, 0) == 0) {
+	if(WiseSnail_Connect(AGENT_DEFAULT_SERVER_NAME, 1883, PAAS_ID, PAAS_PW, NULL, 0) == 0) {
         //
         // No succesful connection to broker
         //
@@ -1887,9 +1900,12 @@ static long lRunStationMode(void)
 #endif /* endif USE_SENSOR */
             data[0].value = fTemperature;
             data[1].value = usiHumidity;
+#if 0   //samlin-
             data[2].value = GetGPIO_1();
             data[3].value = GetGPIO_2();
-            WiseSnail_Update(mac, data, 4);
+#endif
+            //WiseSnail_Update(mac, data, 4);   //samlin-
+            WiseSnail_Update(mac, data, 2);     //samlin+
         }
         WiseSnail_MainLoop(sleepOneSecond);
     	second = (second+1)%AGENT_REFLASH_TIME;

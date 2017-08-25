@@ -43,8 +43,9 @@ void *__WiseMem_Alloc(int len, char *file, int line) {
 }
 
 int WiseMem_Size(void *address) {
-    address -= sizeof(int);
-    return *(int *)address;
+	char *a = (char *)address;
+    a -= sizeof(int);
+    return *(int *)a;
 }
 
 void WiseMem_Release() {
