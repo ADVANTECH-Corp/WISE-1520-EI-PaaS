@@ -1,7 +1,7 @@
 /*
  * WiseCarrier_MQTT.c
  *
- *  Created on: 2016¦~3¤ë14¤é
+ *  Created on: 2016.3.14
  *      Author: Fred.Chang
  */
 #include "user.h"
@@ -625,6 +625,10 @@ WISE_CARRIER_API bool WiCar_MQTT_Publish(const char* topic, const void *msg,
 		if(ret < 0) {
 			//re-send
 			g_lostconnect_cb(g_userdata);
+#if 1	// reboot if fail to connect broker
+			wiseprint("\r\ngoing to reboot\r\n");
+			wise_reboot(1);
+#endif
 			if(WiCar_MQTT_Reconnect()) {
 				ret = sl_ExtLib_MqttClientSend((void*) connconf->clt_ctx, topic, msg, msglen, qos, retain);
 				if(ret < 0)
